@@ -1,0 +1,33 @@
+# Render.com configuration
+services:
+  # Backend API
+  - type: web
+    name: move-backend
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: "pip install -r backend/requirements.txt && python -m textblob.download_corpora"
+    startCommand: "cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: NEWSAPI_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: FRONTEND_URL
+        value: https://move-frontend.onrender.com
+      - key: PYTHON_VERSION
+        value: 3.12.0
+
+  # Frontend
+  - type: web
+    name: move-frontend
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: "cd frontend && npm install && npm run build"
+    startCommand: "cd frontend && npm start"
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://move-backend.onrender.com
+      - key: NODE_VERSION
+        value: 18.17.0
