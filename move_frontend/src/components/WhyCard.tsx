@@ -221,14 +221,11 @@ export function WhyCard({ data, totalValue }: Props) {
           </div>
         </div>
 
-        {/* AI Explanation */}
+        {/* Explanation */}
         <div
-          className="mt-6 pt-5 space-y-2"
+          className="mt-6 pt-5"
           style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
         >
-          <p className="text-slate-500 text-[10px] font-semibold uppercase tracking-[0.18em]">
-            AI explanation
-          </p>
           <p
             className="text-slate-300 text-sm leading-relaxed"
             style={{ textWrap: 'pretty' } as React.CSSProperties}

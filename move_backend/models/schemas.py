@@ -124,6 +124,79 @@ class ExplanationResult(BaseModel):
     confidence_label: str = "Medium"
 
 
+# ---------------------------------------------------------------------------
+# Stock detail response models (GET /stock/{symbol})
+# ---------------------------------------------------------------------------
+
+
+class FibLevel(BaseModel):
+    level: str
+    value: float
+
+
+class PricePoint(BaseModel):
+    date: str
+    price: float
+    ma50: float
+    ma200: float
+
+
+class RevenueEntry(BaseModel):
+    year: str
+    value: float
+
+
+class StockBalanceResponse(BaseModel):
+    totalDebt: str
+    cash: str
+    healthScore: int
+    healthLabel: str  # 'Strong' | 'Moderate' | 'Weak'
+
+
+class StockRatiosResponse(BaseModel):
+    pe: float
+    eps: float
+    roe: float
+    debtToEquity: float
+    marketCap: str
+    dividendYield: float
+
+
+class StockTechnicalResponse(BaseModel):
+    rsi: float
+    trend: str  # 'Bullish' | 'Bearish' | 'Neutral'
+    ma50: float
+    ma200: float
+    currentPrice: float
+    support: float
+    resistance: float
+    fibonacci: List[FibLevel]
+    priceHistory: List[PricePoint]
+
+
+class StockDetailResponse(BaseModel):
+    symbol: str
+    name: str
+    sector: str
+    currency: str           # 'INR' | 'USD'
+    competitors: List[str]
+    revenue: List[RevenueEntry]
+    profit: List[RevenueEntry]
+    revenueGrowth: float
+    profitGrowth: float
+    balance: StockBalanceResponse
+    promoterHolding: float  # 0–100 %
+    pros: List[str]
+    cons: List[str]
+    ratios: StockRatiosResponse
+    technical: StockTechnicalResponse
+
+
+# ---------------------------------------------------------------------------
+# Internal pipeline models
+# ---------------------------------------------------------------------------
+
+
 class NewsSignal(BaseModel):
     """Latest news item for a stock, with pre-computed sentiment."""
 

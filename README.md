@@ -33,6 +33,9 @@ It combines:
   - [WebSocket Events](#websocket-events)
   - [How The Pipeline Works](#how-the-pipeline-works)
   - [Data Sources and Fallbacks](#data-sources-and-fallbacks)
+  - [Deploy (Free Tier)](#deploy-free-tier)
+    - [Backend on Render (Free)](#backend-on-render-free)
+    - [Frontend on Vercel (Free)](#frontend-on-vercel-free)
   - [Troubleshooting](#troubleshooting)
     - [Frontend shows backend offline warning](#frontend-shows-backend-offline-warning)
     - [WebSocket not connecting](#websocket-not-connecting)
@@ -256,6 +259,43 @@ This keeps the UI responsive even with external data-source delays.
 
 ---
 
+## Deploy (Free Tier)
+
+This setup keeps cost at $0 for hobby/demo usage:
+
+- Backend: Render free web service
+- Frontend: Vercel free hobby project
+
+### Backend on Render (Free)
+
+1. Push this repo to GitHub.
+2. In Render, create a new Web Service pointing to this repo.
+3. Configure:
+  - Root Directory: `move_backend`
+  - Runtime: `Python`
+  - Build Command: `pip install -r requirements.txt`
+  - Start Command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+4. Deploy and copy the backend URL (example: `https://move-backend.onrender.com`).
+5. Verify health endpoint:
+  - `https://move-backend.onrender.com/health`
+
+### Frontend on Vercel (Free)
+
+1. Import the same GitHub repo in Vercel.
+2. Set:
+  - Root Directory: `move_frontend`
+3. Add environment variables in Vercel Project Settings:
+  - `NEXT_PUBLIC_BACKEND_HTTP_URL=https://move-backend.onrender.com`
+  - `NEXT_PUBLIC_BACKEND_WS_URL=wss://move-backend.onrender.com/ws/updates`
+4. Redeploy.
+
+Notes:
+- API requests are proxied via `/move-api/*` using `NEXT_PUBLIC_BACKEND_HTTP_URL`.
+- WebSocket uses `NEXT_PUBLIC_BACKEND_WS_URL`.
+- If backend is sleeping on free tier, first request can be slow.
+
+---
+
 ## Troubleshooting
 
 ### Frontend shows backend offline warning
@@ -265,7 +305,7 @@ This keeps the UI responsive even with external data-source delays.
 
 ### WebSocket not connecting
 
-- Ensure backend is running and `ws://localhost:8000/ws/updates` is reachable
+- Ensure backend is running and reachable at `NEXT_PUBLIC_BACKEND_WS_URL`
 - Verify no firewall/proxy is blocking local WebSocket traffic
 
 ### Empty or stale market/news values
@@ -285,8 +325,6 @@ pip install --upgrade fastapi "uvicorn[standard]" pydantic yfinance
 
 ## Future Improvements
 
-- Add `requirements.txt` or `pyproject.toml` for reproducible backend setup
 - Add test suites for agents/routes/services
-- Add environment-based configuration for intervals/thresholds
 - Add Docker and docker-compose for one-command startup
 - Add CI checks (lint, test, type checks)

@@ -34,7 +34,7 @@ interface RealtimeState {
 // Constants
 // ---------------------------------------------------------------------------
 
-const WS_URL = 'ws://localhost:8000/ws/updates'
+const WS_URL = process.env.NEXT_PUBLIC_BACKEND_WS_URL || 'ws://localhost:8000/ws/updates'
 const PING_INTERVAL_MS = 25_000
 const RECONNECT_DELAY_MS = 3_000
 

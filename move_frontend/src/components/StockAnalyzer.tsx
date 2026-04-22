@@ -7,14 +7,22 @@ import { PriceChange } from './PriceChange'
 import { useAnalysis } from '@/hooks/useAnalysis'
 import { DEFAULT_DATE } from '@/constants'
 
-export function StockAnalyzer() {
+interface Props {
+  onAnalyze?: (stock: string) => void
+}
+
+export function StockAnalyzer({ onAnalyze }: Props) {
   const [stock, setStock] = useState('')
   const [date, setDate] = useState(DEFAULT_DATE)
   const { data, loading, error, analyze } = useAnalysis()
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (stock.trim()) analyze(stock.trim().toUpperCase(), date)
+    if (stock.trim()) {
+      const normalized = stock.trim().toUpperCase()
+      analyze(normalized, date)
+      onAnalyze?.(normalized)
+    }
   }
 
   return (

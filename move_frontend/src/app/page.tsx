@@ -3,18 +3,36 @@
 import { motion } from 'framer-motion'
 import { WhyCard } from '@/components/WhyCard'
 import { PortfolioSummary } from '@/components/PortfolioSummary'
-import { AttributionChart } from '@/components/AttributionChart'
 import { LiveFeed } from '@/components/LiveFeed'
 import { LiveStatus } from '@/components/LiveStatus'
 import { DemoFlow } from '@/components/DemoFlow'
+import { LossExplainer } from '@/components/LossExplainer'
 import { EventAlert } from '@/components/EventAlert'
 import { InsightCard } from '@/components/InsightCard'
 import { PersonalizationPanel } from '@/components/PersonalizationPanel'
-import { WhyCardSkeleton, PortfolioSkeleton, ChartSkeleton } from '@/components/LoadingSkeleton'
+import { WhyCardSkeleton, PortfolioSkeleton } from '@/components/LoadingSkeleton'
 import { useWhyCard } from '@/hooks/useWhyCard'
 import { usePortfolio } from '@/hooks/usePortfolio'
 import { useRealtimeUpdates } from '@/hooks/useRealtimeUpdates'
 import { DEFAULT_DATE } from '@/constants'
+import type { WhyCardResponse } from '@/types'
+
+// ── Demo fallback — used when backend is unavailable ─────────
+// Simulates a down day so all components (incl. LossExplainer) render.
+const DEMO_WHY_CARD: WhyCardResponse = {
+  date: DEFAULT_DATE,
+  total_portfolio_change_pct: -2.14,
+  top_causes: [
+    { cause: 'sector',        impact: 48 },
+    { cause: 'macro',         impact: 31 },
+    { cause: 'idiosyncratic', impact: 21 },
+  ],
+  explanation_summary:
+    'Your portfolio declined primarily due to broad IT sector weakness and macro headwinds from higher-than-expected US CPI data, amplified by company-specific selling in two holdings.',
+  confidence_pct: 74,
+  confidence_label: 'High',
+  primary_driver_label: 'sector',
+}
 
 export default function DashboardPage() {
   // REST data
@@ -24,32 +42,22 @@ export default function DashboardPage() {
   // Real-time WebSocket data
   const { events, latestTicker, connected } = useRealtimeUpdates()
 
-  // Patch WhyCard with freshest live attribution when available
+  // Patch WhyCard with freshest live attribution when available;
+  // fall back to DEMO_WHY_CARD so the dashboard is always populated.
+  const baseWhyCard = whyCard ?? DEMO_WHY_CARD
+
   const liveWhyCard = latestTicker && events[latestTicker]
     ? {
-        ...(whyCard ?? {
-          date: DEFAULT_DATE,
-          total_portfolio_change_pct: 0,
-          top_causes: [],
-          explanation_summary: '',
-          confidence_pct: 70,
-          confidence_label: 'Medium',
-          primary_driver_label: '',
-        }),
+        ...baseWhyCard,
         top_causes:
           events[latestTicker].attribution?.map((a) => ({
             cause: a.factor,
             impact: a.contribution,
-          })) ?? whyCard?.top_causes ?? [],
+          })) ?? baseWhyCard.top_causes,
         explanation_summary:
-          events[latestTicker].explanation ?? whyCard?.explanation_summary ?? '',
+          events[latestTicker].explanation ?? baseWhyCard.explanation_summary,
       }
-    : whyCard
-
-  const portfolioAttribution = liveWhyCard?.top_causes?.map((c) => ({
-    factor: c.cause,
-    contribution: c.impact,
-  }))
+    : baseWhyCard
 
   const liveEventCount = Object.keys(events).length
   const backendDown    = portError && !connected
@@ -80,11 +88,9 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* ── Event alert — only when |change| ≥ 1.5% ── */}
-        {!whyLoading && liveWhyCard && (
-          <EventAlert data={liveWhyCard} />
-        )}
+        <EventAlert data={liveWhyCard} />
 
-        {/* ── Backend offline warning ── */}
+        {/* ── Backend offline notice ── */}
         {backendDown && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -92,9 +98,9 @@ export default function DashboardPage() {
             className="bg-amber-500/10 border border-amber-500/30 rounded-xl px-5 py-3"
           >
             <p className="text-amber-400 text-sm">
-              Cannot reach backend.{' '}
+              Backend unreachable — showing demo data.{' '}
               <span className="font-mono text-amber-500">uvicorn main:app --reload</span> in{' '}
-              <span className="font-mono">move_backend/</span> then refresh.
+              <span className="font-mono">move_backend/</span> to connect live data.
             </p>
           </motion.div>
         )}
@@ -104,9 +110,9 @@ export default function DashboardPage() {
           <div className="lg:col-span-2">
             {whyLoading ? (
               <WhyCardSkeleton />
-            ) : liveWhyCard ? (
+            ) : (
               <WhyCard data={liveWhyCard} totalValue={portfolio?.total_value} />
-            ) : null}
+            )}
           </div>
           <div className="lg:col-span-1">
             {portLoading ? (
@@ -117,37 +123,16 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* ── Loss explainer — renders only when portfolio change < 0 ── */}
+        <LossExplainer data={liveWhyCard} />
+
         {/* ── Personalised insights ── */}
-        {!whyLoading && !portLoading && (
-          <PersonalizationPanel whyCard={liveWhyCard ?? null} portfolio={portfolio ?? null} />
+        {!portLoading && portfolio && (
+          <PersonalizationPanel whyCard={liveWhyCard} portfolio={portfolio} />
         )}
 
-        {/* ── Attribution chart ── */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-slate-300 text-base font-semibold">Portfolio attribution</h2>
-            <span className="text-slate-600 text-xs">Weighted across all holdings</span>
-          </div>
-          {whyLoading ? (
-            <ChartSkeleton />
-          ) : portfolioAttribution ? (
-            <AttributionChart
-              attribution={portfolioAttribution}
-              title="Portfolio-level factor breakdown"
-            />
-          ) : null}
-        </div>
-
-        {/* ── Insight card: "If you held" + top insight ── */}
-        {!whyLoading && liveWhyCard && (
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-slate-300 text-base font-semibold">Intelligence</h2>
-              <span className="text-slate-600 text-xs">Pattern matching · simulated history</span>
-            </div>
-            <InsightCard data={liveWhyCard} totalValue={portfolio?.total_value} />
-          </div>
-        )}
+        {/* ── Insight card ── */}
+        <InsightCard data={liveWhyCard} totalValue={portfolio?.total_value} />
 
         {/* ── Real-time feed ── */}
         <div>

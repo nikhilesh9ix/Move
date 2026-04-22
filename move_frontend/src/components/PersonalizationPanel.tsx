@@ -83,10 +83,6 @@ export function PersonalizationPanel({ whyCard, portfolio }: Props) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.15 }}
     >
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-slate-300 text-base font-semibold">Personalised insights</h2>
-        <span className="text-slate-600 text-xs">Based on your portfolio & behaviour</span>
-      </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {insights.map((ins, i) => (
           <motion.div
