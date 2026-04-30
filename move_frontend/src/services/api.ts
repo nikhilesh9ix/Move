@@ -2,7 +2,7 @@ import axios from 'axios'
 import type { AnalyzeResponse, PortfolioResponse, WhyCardResponse } from '@/types'
 
 const client = axios.create({
-  baseURL: '/move-api',
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || '/move-api',
   timeout: 10_000,
   headers: { 'Content-Type': 'application/json' },
 })

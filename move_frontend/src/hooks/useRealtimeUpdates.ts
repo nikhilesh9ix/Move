@@ -34,7 +34,17 @@ interface RealtimeState {
 // Constants
 // ---------------------------------------------------------------------------
 
-const WS_URL = process.env.NEXT_PUBLIC_BACKEND_WS_URL || 'ws://localhost:8000/ws/updates'
+// Determine WebSocket URL based on current page location
+function getWebSocketUrl(): string {
+  if (typeof window === 'undefined') {
+    return process.env.NEXT_PUBLIC_BACKEND_WS_URL || 'ws://localhost:7860/ws/updates'
+  }
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const host = window.location.host
+  return process.env.NEXT_PUBLIC_BACKEND_WS_URL || `${protocol}//${host}/ws/updates`
+}
+
+const WS_URL = getWebSocketUrl()
 const PING_INTERVAL_MS = 25_000
 const RECONNECT_DELAY_MS = 3_000
 
